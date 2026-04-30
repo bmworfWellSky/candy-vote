@@ -144,14 +144,26 @@ function candyImageUrl(c) {
 }
 
 function loadCandyImages(candies) {
-  candies.forEach(c => {
+  const cached = candies.filter(c => c.image_url);
+  const uncached = candies.filter(c => !c.image_url);
+
+  cached.forEach(c => loadSingleImage(c, 0));
+  uncached.forEach((c, i) => loadSingleImage(c, (i + 1) * 3000));
+}
+
+function loadSingleImage(c, delay) {
+  setTimeout(() => {
     const img = document.getElementById('cimg-' + c.id);
     if (!img) return;
     const url = c.image_url || candyImageUrl(c);
+    let retries = 0;
+    const maxRetries = 3;
+
     const giveUp = setTimeout(() => {
       const wrap = img.closest('.vote-img-wrap');
       if (wrap && !img.classList.contains('loaded')) wrap.style.display = 'none';
-    }, 20000);
+    }, 45000);
+
     img.onload = () => {
       clearTimeout(giveUp);
       img.classList.add('loaded');
@@ -160,9 +172,22 @@ function loadCandyImages(candies) {
         c.image_url = url;
       }
     };
-    img.onerror = () => { const s = img.src; img.removeAttribute('src'); setTimeout(() => img.src = s, 4000); };
+
+    img.onerror = () => {
+      retries++;
+      if (retries <= maxRetries) {
+        const backoff = 4000 * Math.pow(2, retries - 1);
+        img.removeAttribute('src');
+        setTimeout(() => { img.src = url; }, backoff);
+      } else {
+        const wrap = img.closest('.vote-img-wrap');
+        if (wrap) wrap.style.display = 'none';
+        clearTimeout(giveUp);
+      }
+    };
+
     img.src = url;
-  });
+  }, delay);
 }
 
 function showWinnerModal(candyId) {
