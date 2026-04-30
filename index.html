@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>/candy/ - Candy Machine Voting General</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body, html {
+      font-family: 'Arial', 'Helvetica', sans-serif;
+      background: #1d1f21;
+      color: #c5c8c6;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* -- BREAKING NEWS TICKER ------------------------------------------------ */
+    .breaking-ticker {
+      background: #cc0000;
+      color: white;
+      font-weight: 900;
+      font-size: 0.82rem;
+      padding: 5px 0;
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+      border-bottom: 3px solid #ff0;
+      font-family: 'Arial Black', 'Impact', sans-serif;
+      letter-spacing: 0.5px;
+    }
+
+    .breaking-label {
+      background: #fff;
+      color: #cc0000;
+      font-weight: 900;
+      padding: 2px 12px;
+      margin-right: 16px;
+      display: inline-block;
+      font-size: 0.78rem;
+      letter-spacing: 2px;
+      animation: alertFlash 0.8s step-end infinite;
+    }
+
+    @keyframes alertFlash {
+      0%, 49% { background: #fff; color: #cc0000; }
+      50%, 100% { background: #ff0; color: #cc0000; }
+    }
+
+    .ticker-text {
+      display: inline-block;
+      animation: tickerScroll 35s linear infinite;
+    }
+
+    @keyframes tickerScroll {
+      0% { transform: translateX(100vw); }
+      100% { transform: translateX(-200%); }
+    }
+
+    /* -- HEADER (imageboard style) ------------------------------------------ */
+    header {
+      background: #282a2e;
+      border-bottom: 2px solid #373b41;
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      color: #81a2be;
+      font-family: 'Tahoma', sans-serif;
+      font-style: italic;
+    }
+
+    header h1 span.board {
+      color: #cc6666;
+      font-style: normal;
+    }
+
+    .voter-name {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: #969896;
+    }
+
+    .voter-name input {
+      padding: 0.3rem 0.6rem;
+      border: 1px solid #373b41;
+      border-radius: 2px;
+      font-size: 0.82rem;
+      width: 150px;
+      background: #1d1f21;
+      color: #c5c8c6;
+      font-family: inherit;
+    }
+
+    .voter-name input:focus { outline: none; border-color: #81a2be; }
+
+    .tripcode {
+      color: #8abeb7;
+      font-size: 0.75rem;
+      font-family: monospace;
+    }
+
+    /* -- NAV (tab bar) ------------------------------------------------------ */
+    nav {
+      background: #282a2e;
+      display: flex;
+      border-bottom: 1px solid #373b41;
+      flex-wrap: wrap;
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      color: #969896;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    nav button:hover { color: #c5c8c6; background: #373b41; }
+    nav button.active { color: #81a2be; border-bottom-color: #81a2be; }
+
+    /* -- MAIN CONTENT ------------------------------------------------------- */
+    main {
+      max-width: 780px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-header h2 {
+      font-size: 1.1rem;
+      color: #b5bd68;
+      font-weight: normal;
+    }
+
+    /* -- BUTTONS ------------------------------------------------------------ */
+    .btn {
+      background: #373b41;
+      color: #c5c8c6;
+      border: 1px solid #4d5057;
+      padding: 0.4rem 0.9rem;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .btn:hover { background: #4d5057; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn.primary { background: #5f819d; border-color: #81a2be; color: #fff; }
+    .btn.primary:hover { background: #81a2be; }
+    .btn.danger { background: #a54242; border-color: #cc6666; color: #fff; }
+    .btn.danger:hover { background: #cc6666; }
+    .btn.sm { padding: 0.25rem 0.6rem; font-size: 0.78rem; }
+
+    .btn-row { display: flex; gap: 0.5rem; }
+
+    /* -- CARDS (post style) ------------------------------------------------- */
+    .card {
+      background: #282a2e;
+      border: 1px solid #373b41;
+      border-left: 3px solid #5f819d;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .post-header {
+      font-size: 0.78rem;
+      color: #969896;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .post-name { color: #b5bd68; font-weight: 700; }
+    .post-trip { color: #8abeb7; font-family: monospace; }
+    .post-no { color: #969896; }
+    .post-no a { color: #81a2be; text-decoration: none; cursor: pointer; }
+    .post-you { color: #cc6666; font-size: 0.72rem; font-weight: 700; }
+    .post-date { color: #707070; font-size: 0.72rem; }
+
+    .greentext { color: #789922; }
+    .greentext::before { content: '>'; }
+
+    /* -- VOTE CARDS --------------------------------------------------------- */
+    .vote-card {
+      cursor: pointer;
+      transition: border-color 0.15s;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .vote-card:hover:not(.closed-card) { border-color: #81a2be; border-left-color: #81a2be; }
+    .vote-card.my-vote { border-color: #b5bd68; border-left-color: #b5bd68; background: #2a2e25; }
+    .vote-card.is-winner { border-color: #8abeb7; border-left-color: #8abeb7; background: #252e2a; }
+    .vote-card.closed-card { cursor: default; }
+
+    .vote-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(90deg, #1d1f21 25%, #282a2e 50%, #1d1f21 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.8s infinite;
+      overflow: hidden;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .vote-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .vote-img.loaded { opacity: 1; }
+
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-35deg);
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: rgba(255, 255, 255, 0.12);
+      letter-spacing: 6px;
+      pointer-events: none;
+      white-space: nowrap;
+      font-family: 'Impact', sans-serif;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .vote-body {
+      padding: 0.8rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .bar-wrap { min-width: 140px; text-align: right; }
+
+    .vote-bar {
+      height: 6px;
+      background: #373b41;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .vote-bar-fill {
+      height: 100%;
+      background: #81a2be;
+      border-radius: 2px;
+      transition: width 0.4s;
+    }
+
+    .vote-count { font-size: 0.78rem; color: #969896; }
+
+    /* -- WINNER MODAL ------------------------------------------------------- */
+    .winner-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .winner-modal.active { display: flex; }
+    .winner-modal-inner {
+      background: #282a2e;
+      border: 2px solid #8abeb7;
+      border-radius: 4px;
+      overflow: hidden;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    .winner-modal-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      background: linear-gradient(90deg, #1d1f21 25%, #282a2e 50%, #1d1f21 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.8s infinite;
+      overflow: hidden;
+    }
+    .winner-modal-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .winner-modal-img.loaded { opacity: 1; }
+    .winner-modal-body { padding: 1.5rem; }
+    .winner-modal-name { font-size: 1.6rem; font-weight: 700; color: #8abeb7; margin-bottom: 0.4rem; }
+    .winner-modal-sub { color: #969896; margin-bottom: 1rem; font-size: 0.9rem; }
+
+    /* -- TIEBREAKER --------------------------------------------------------- */
+    @keyframes tiepulse {
+      from { box-shadow: 0 0 8px rgba(204, 102, 102, 0.6); }
+      to { box-shadow: 0 0 20px rgba(204, 102, 102, 1); }
+    }
+
+    .tiebreaker-banner {
+      background: linear-gradient(135deg, #a54242, #de935f, #a54242);
+      color: white;
+      font-weight: 900;
+      text-align: center;
+      font-size: 0.95rem;
+      padding: 0.8rem 1rem;
+      border-radius: 2px;
+      margin-bottom: 0.75rem;
+      animation: tiepulse 0.6s infinite alternate;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* -- BADGES ------------------------------------------------------------- */
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      border-radius: 2px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-left: 0.4rem;
+    }
+
+    .badge.winner { background: #8abeb7; color: #1d1f21; }
+    .badge.sticky { background: #de935f; color: #1d1f21; }
+    .badge.locked { background: #a54242; color: #fff; }
+    .badge.goldmine { background: #f0c674; color: #1d1f21; }
+    .badge.banned { background: #cc6666; color: #fff; font-style: italic; }
+
+    /* -- BANNERS ------------------------------------------------------------ */
+    .banner {
+      padding: 0.6rem 0.9rem;
+      border-radius: 2px;
+      margin-bottom: 0.75rem;
+      font-size: 0.82rem;
+      border: 1px solid;
+    }
+
+    .banner.warn { background: #3b3524; border-color: #5e4f1a; color: #f0c674; }
+    .banner.info { background: #1f2e3a; border-color: #2c4a5e; color: #81a2be; }
+    .banner.success { background: #253025; border-color: #3a4f3a; color: #b5bd68; }
+    .banner.error { background: #352525; border-color: #5e2a2a; color: #cc6666; }
+
+    /* -- FORMS -------------------------------------------------------------- */
+    form.add-form {
+      background: #282a2e;
+      border: 1px solid #373b41;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    form.add-form h3 {
+      font-size: 0.85rem;
+      margin-bottom: 0.6rem;
+      color: #b5bd68;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: normal;
+    }
+
+    .fg { margin-bottom: 0.6rem; }
+    .fg label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.2rem; color: #969896; }
+    .fg input {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #373b41;
+      border-radius: 2px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      background: #1d1f21;
+      color: #c5c8c6;
+    }
+    .fg input:focus { outline: none; border-color: #81a2be; }
+
+    /* -- POOL & HISTORY CARDS ----------------------------------------------- */
+    .pool-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .history-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .r-name { font-weight: 600; font-size: 0.95rem; color: #c5c8c6; }
+    .r-notes { font-size: 0.78rem; color: #969896; margin-top: 2px; }
+    .r-meta { font-size: 0.72rem; color: #707070; margin-top: 2px; }
+    .history-date { font-size: 0.78rem; color: #707070; }
+
+    .hint { font-size: 0.68rem; color: #707070; margin-top: 3px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem;
+      color: #707070;
+    }
+    .empty-state p { margin-bottom: 0.75rem; }
+
+    .spinner { text-align: center; padding: 2rem; color: #707070; font-size: 0.85rem; }
+
+    .voters { font-size: 0.74rem; color: #707070; margin-top: 0.5rem; }
+
+    /* -- FLAG DROPDOWN ------------------------------------------------------ */
+    .flag-btn {
+      background: none;
+      border: none;
+      color: #707070;
+      font-size: 0.68rem;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: underline;
+    }
+    .flag-btn:hover { color: #cc6666; }
+
+    /* -- CRAIGSLIST WARNING ------------------------------------------------- */
+    .cl-warning {
+      background: #2a2520;
+      border: 1px solid #4d3f2a;
+      padding: 0.6rem 0.9rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.72rem;
+      color: #de935f;
+    }
+    .cl-warning a { color: #81a2be; }
+    .cl-location {
+      font-size: 0.68rem;
+      color: #707070;
+      font-style: italic;
+    }
+
+    /* -- MYSPACE MUSIC PLAYER ----------------------------------------------- */
+    .myspace-player {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, #2a2a2a, #1a1a1a);
+      border-top: 2px solid #444;
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 999;
+      font-size: 0.75rem;
+      color: #999;
+    }
+    .myspace-player .play-btn {
+      background: #333;
+      border: 1px solid #555;
+      color: #ccc;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .myspace-player .track-info { flex: 1; }
+    .myspace-player .track-name { color: #81a2be; font-weight: 600; }
+    .myspace-player .track-artist { color: #707070; }
+    .myspace-player .progress-bar {
+      flex: 2;
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .myspace-player .progress-fill {
+      height: 100%;
+      background: #81a2be;
+      width: 0%;
+      animation: fakeProgress 47s linear infinite;
+    }
+    @keyframes fakeProgress {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+    .myspace-player .vol { color: #555; font-size: 0.65rem; }
+
+    /* -- SIDEBAR (local news + myspace mashup) ------------------------------ */
+    .chaos-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 220px;
+      height: 100vh;
+      background: #1a1c1e;
+      border-left: 1px solid #373b41;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 998;
+      padding: 8px;
+      font-size: 0.72rem;
+      scrollbar-width: none;
+    }
+    .chaos-sidebar::-webkit-scrollbar { display: none; }
+
+    .sidebar-section {
+      background: #282a2e;
+      border: 1px solid #373b41;
+      margin-bottom: 8px;
+      padding: 8px;
+    }
+    .sidebar-header {
+      font-size: 0.72rem;
+      font-weight: 900;
+      color: #cc0000;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #cc0000;
+      font-family: 'Arial Black', 'Impact', sans-serif;
+    }
+    .sidebar-header.blue { color: #81a2be; border-bottom-color: #81a2be; }
+    .sidebar-header.green { color: #b5bd68; border-bottom-color: #b5bd68; }
+
+    .weather-widget {
+      text-align: center;
+      padding: 6px;
+    }
+    .weather-temp {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #de935f;
+      font-family: 'Arial Black', sans-serif;
+    }
+    .weather-desc { color: #969896; font-size: 0.68rem; margin-top: 2px; }
+    .weather-loc { color: #707070; font-size: 0.62rem; }
+
+    .sidebar-poll label {
+      display: block;
+      margin: 4px 0;
+      cursor: pointer;
+      color: #969896;
+    }
+    .sidebar-poll-btn {
+      display: block;
+      width: 100%;
+      background: #cc0000;
+      color: white;
+      border: none;
+      padding: 4px;
+      margin-top: 6px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .top8-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px solid #373b41;
+      color: #969896;
+    }
+    .top8-rank { color: #de935f; font-weight: 700; width: 18px; }
+    .top8-name { flex: 1; color: #c5c8c6; }
+
+    .sa-ad {
+      background: linear-gradient(135deg, #2a2520, #1d1f21);
+      border: 1px dashed #de935f;
+      padding: 10px;
+      text-align: center;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .sa-ad::before {
+      content: 'ADVERTISEMENT';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #de935f;
+      color: #1d1f21;
+      font-size: 0.52rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+    }
+    .sa-ad-title { font-weight: 700; color: #c5c8c6; font-size: 0.82rem; margin-top: 4px; }
+    .sa-ad-sub { color: #707070; font-size: 0.68rem; margin: 4px 0; }
+    .sa-ad-cta {
+      background: #a54242;
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      font-size: 0.68rem;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .teaser-card {
+      background: #1d1f21;
+      border: 1px solid #373b41;
+      padding: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+    .teaser-label {
+      color: #cc0000;
+      font-weight: 900;
+      font-size: 0.62rem;
+      letter-spacing: 1px;
+      font-family: 'Arial Black', sans-serif;
+    }
+    .teaser-text { color: #c5c8c6; font-size: 0.72rem; margin-top: 2px; }
+
+    .view-counter {
+      text-align: center;
+      padding: 6px;
+      font-family: 'Courier New', monospace;
+    }
+    .view-counter-label { font-size: 0.58rem; color: #707070; letter-spacing: 1px; }
+    .view-counter-num {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #b5bd68;
+      letter-spacing: 3px;
+    }
+
+    /* -- COOKIE BANNER ------------------------------------------------------ */
+    .cookie-banner {
+      position: fixed;
+      bottom: 38px;
+      left: 0;
+      right: 220px;
+      background: #1a1c1e;
+      border-top: 1px solid #373b41;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 9999;
+      font-size: 0.75rem;
+      color: #969896;
+    }
+    .cookie-banner p { flex: 1; margin: 0; line-height: 1.4; }
+    .cookie-accept {
+      background: #b5bd68;
+      color: #1d1f21;
+      border: none;
+      padding: 6px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 0.75rem;
+    }
+    .cookie-reject {
+      background: none;
+      color: #707070;
+      border: 1px solid #373b41;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 0.68rem;
+      white-space: nowrap;
+      transition: transform 0.2s;
+    }
+
+    /* -- APP POPUP ---------------------------------------------------------- */
+    .app-popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .app-popup-box {
+      background: #282a2e;
+      border: 2px solid #81a2be;
+      border-radius: 4px;
+      padding: 2rem;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+    }
+    .app-popup-box h2 { color: #81a2be; font-size: 1.4rem; margin-bottom: 0.4rem; }
+    .app-popup-box p { color: #969896; margin-bottom: 1.2rem; font-size: 0.85rem; }
+    .app-popup-box .app-dl {
+      background: linear-gradient(135deg, #81a2be, #5f819d);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 4px;
+      animation: appPulse 1.2s infinite;
+    }
+    @keyframes appPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .app-popup-box .app-no {
+      display: block;
+      margin-top: 8px;
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 0.62rem;
+      cursor: pointer;
+    }
+
+    /* -- SPARKLE CURSOR ----------------------------------------------------- */
+    .sparkle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99999;
+      font-size: 10px;
+      animation: sparkleFade 0.8s forwards;
+    }
+    @keyframes sparkleFade {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-30px) scale(0.3); }
+    }
+
+    /* -- GLITTER TEXT ------------------------------------------------------- */
+    .glitter {
+      background: linear-gradient(90deg, #cc6666, #de935f, #f0c674, #b5bd68, #8abeb7, #81a2be, #b294bb);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: glitterShift 3s linear infinite;
+    }
+    @keyframes glitterShift {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    /* -- SA/FORUM SIGNATURES ------------------------------------------------ */
+    .forum-sig {
+      border-top: 1px dashed #373b41;
+      margin-top: 6px;
+      padding-top: 4px;
+      font-size: 0.62rem;
+      color: #555;
+      font-style: italic;
+    }
+
+    /* -- BANNED/PROBATION --------------------------------------------------- */
+    .banned-notice {
+      text-align: center;
+      font-size: 0.68rem;
+      color: #cc6666;
+      background: #2a1f1f;
+      border: 1px solid #5e2a2a;
+      padding: 4px 8px;
+      margin-top: 4px;
+    }
+
+    /* -- FLASH LOADING SCREEN ----------------------------------------------- */
+    .flash-loader {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-family: 'Courier New', monospace;
+    }
+    .flash-loader .fl-bar-outer {
+      width: 300px;
+      height: 16px;
+      border: 2px solid #555;
+      margin: 12px 0;
+      background: #111;
+    }
+    .flash-loader .fl-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, #333, #666, #333);
+      animation: flashLoad 2.5s ease-in-out forwards;
+    }
+    @keyframes flashLoad {
+      0% { width: 0%; }
+      60% { width: 72%; }
+      85% { width: 88%; }
+      100% { width: 100%; }
+    }
+    .flash-loader .fl-text { font-size: 0.72rem; color: #666; }
+    .flash-loader .fl-plugin { font-size: 0.58rem; color: #444; margin-top: 8px; }
+
+    /* -- DONT CLICK --------------------------------------------------------- */
+    .dont-click {
+      position: fixed;
+      bottom: 60px;
+      left: 12px;
+      background: #a54242;
+      color: #fff;
+      border: 2px outset #cc6666;
+      padding: 6px 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 997;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      animation: dontClickWobble 2s ease-in-out infinite;
+    }
+    @keyframes dontClickWobble {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+
+    /* -- ADJUST MAIN FOR SIDEBAR -------------------------------------------- */
+    body { padding-bottom: 44px; }
+
+    @media (min-width: 1100px) {
+      body { margin-right: 220px; }
+    }
+    @media (max-width: 1099px) {
+      .chaos-sidebar { display: none !important; }
+      .dont-click { display: none !important; }
+      .cookie-banner { right: 0; }
+    }
+
+    /* -- SEND TO FRIEND OVERLAY --------------------------------------------- */
+    .send-friend {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 10001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .send-friend-box {
+      background: #282a2e;
+      border: 3px solid #de935f;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .send-friend-box h3 { color: #de935f; font-size: 1.2rem; margin-bottom: 0.4rem; }
+    .send-friend-box p { color: #969896; font-size: 0.82rem; margin-bottom: 1rem; }
+    .send-friend-box input {
+      width: 100%;
+      padding: 0.4rem;
+      background: #1d1f21;
+      border: 1px solid #373b41;
+      color: #c5c8c6;
+      font-family: monospace;
+      font-size: 0.78rem;
+      margin-bottom: 0.6rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- FLASH LOADING SCREEN -->
+<div id="flash-loader" class="flash-loader">
+  <div style="font-size:1.2rem;color:#ccc;margin-bottom:4px;">CandyVote v4.20</div>
+  <div class="fl-text">Loading Macromedia Flash Player 7.0...</div>
+  <div class="fl-bar-outer"><div class="fl-bar-inner"></div></div>
+  <div class="fl-plugin">Requires Macromedia Shockwave &amp; QuickTime 6.0 | Best viewed in Netscape Navigator 4.0 at 800x600</div>
+</div>
+
+<!-- APP DOWNLOAD POPUP (shown after flash loader) -->
+<div id="app-popup" class="app-popup" style="display:none">
+  <div class="app-popup-box">
+    <h2>Get the CandyVote App!</h2>
+    <p>Vote 40% faster with push notifications, haptic feedback, and blockchain-verified ballot integrity.</p>
+    <button class="app-dl" onclick="dismissAppPopup()">Download Now (420 MB)</button>
+    <button class="app-no" onclick="dismissAppPopup()">No thanks, I enjoy suffering</button>
+  </div>
+</div>
+
+<!-- BREAKING NEWS TICKER -->
+<div class="breaking-ticker">
+  <span class="breaking-label">BREAKING NEWS</span>
+  <span class="ticker-text">DEVELOPING STORY: Area candy machine reportedly "almost empty" according to sources close to the situation | JUST IN: Controversial Necco Wafer nomination sparks heated debate in break room | WATCH: Reese's supporters claim "rigged ballot" after Skittles upset | LIVE UPDATE: Candy corn declared "not even real candy" by anonymous tipster | EXCLUSIVE: Inside the shadowy cabal that controls the office candy supply | Is YOUR candy safe? Find out at 11 | ALERT: Swedish Fish lobby denies all allegations</span>
+</div>
+
+<!-- HEADER -->
+<header>
+  <h1><span class="board">/candy/</span> - Candy Machine Voting General</h1>
+  <div class="voter-name">
+    Name:
+    <input type="text" id="voter-name-input" placeholder="Anonymous" maxlength="50">
+    <span class="tripcode" id="tripcode"></span>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <button class="active" data-tab="this-week" onclick="switchTab(this)">This Week</button>
+  <button data-tab="pool" onclick="switchTab(this)">Candy Stash</button>
+  <button data-tab="history" onclick="switchTab(this)">Hall of Sugar</button>
+  <button id="admin-tab-btn" data-tab="admin" onclick="switchTab(this)" style="display:none">Janitor Mode</button>
+</nav>
+
+<!-- MAIN -->
+<main>
+  <div id="flash"></div>
+
+  <!-- Craigslist scam warning -->
+  <div class="cl-warning">
+    Avoid scams, deal locally! Do not wire funds (e.g. Western Union), do not accept cashier/certified checks. <a href="#" onclick="return false">Posting flags & safety tips</a>
+  </div>
+
+  <!-- THIS WEEK -->
+  <div id="tab-this-week" class="tab-content active">
+    <div id="ballot-container"><div class="spinner">Loading...</div></div>
+  </div>
+
+  <!-- CANDY STASH -->
+  <div id="tab-pool" class="tab-content">
+    <form class="add-form" id="add-form">
+      <h3>Submit New Candy</h3>
+      <div class="fg">
+        <label>Candy Name</label>
+        <input id="new-name" type="text" placeholder="e.g. Sour Patch Kids" required maxlength="100">
+      </div>
+      <div class="fg">
+        <label>Notes (optional)</label>
+        <input id="new-notes" type="text" placeholder="e.g. the watermelon ones specifically" maxlength="200">
+      </div>
+      <button type="submit" class="btn primary">Add to Pool</button>
+      <span style="font-size:0.62rem;color:#555;margin-left:8px;">:10bux: registration fee waived (today only)</span>
+    </form>
+    <div id="pool-list"><div class="spinner">Loading...</div></div>
+  </div>
+
+  <!-- HALL OF SUGAR -->
+  <div id="tab-history" class="tab-content">
+    <div class="section-header"><h2 class="glitter">Hall of Sugar</h2></div>
+    <div id="history-list"><div class="spinner">Loading...</div></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="tab-admin" class="tab-content">
+    <div class="section-header"><h2>Janitor Mode</h2></div>
+    <div class="banner warn">You are the janitor. You do it for free.</div>
+    <div id="admin-content"></div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer style="text-align:center;padding:16px;font-size:0.65rem;color:#555;border-top:1px solid #282a2e;margin-top:24px;">
+  &copy; 1997&ndash;2026 CandyVote&trade; Intergalactic Holdings LLC &middot; All Rights Reserved &middot;
+  <a href="#" onclick="return false" style="color:#555">Terms of Service</a> &middot;
+  <a href="#" onclick="return false" style="color:#555">Privacy Policy</a> &middot;
+  <a href="#" onclick="return false" style="color:#555">DMCA</a> &middot;
+  <a href="#" onclick="alert('Stolen from somewhere else on the internet.\neBaum\'s World takes no responsibility.\n\nActual credits:\n- Candy: various manufacturers\n- Code: a mass hallucination\n- Design: crimes');return false" style="color:#555">Credits</a> &middot;
+  <span style="color:#444">Content may have been watermarked by CANDYVOTE.COM</span>
+  <br>
+  <span style="color:#444;font-size:0.58rem;">Best viewed with Netscape Navigator 4.0 or Internet Explorer 5.5 at 800x600 resolution &middot; Optimized for 56k modems &middot; Made on a Mac</span>
+</footer>
+
+<!-- WINNER MODAL -->
+<div id="winner-modal" class="winner-modal" onclick="this.classList.remove('active')">
+  <div class="winner-modal-inner" onclick="event.stopPropagation()">
+    <div class="winner-modal-img-wrap"><img id="winner-modal-img" class="winner-modal-img" alt="winner"></div>
+    <div class="winner-modal-body">
+      <div class="winner-modal-name" id="winner-modal-name"></div>
+      <div class="winner-modal-sub">WINNER WINNER SUGAR DINNER</div>
+      <div style="font-size:0.72rem;color:#707070;margin-bottom:0.8rem;font-style:italic;">"Comedy Goldmine" - Something Awful Forums</div>
+      <button class="btn primary" onclick="document.getElementById('winner-modal').classList.remove('active')">SWEET</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEND TO FRIEND OVERLAY -->
+<div id="send-friend" class="send-friend" style="display:none">
+  <div class="send-friend-box">
+    <h3>SEND THIS TO A FRIEND!</h3>
+    <p>Your friends NEED to see this. Copy this link and send it to everyone you know.</p>
+    <input id="send-friend-url" type="text" readonly>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn primary" onclick="copyFriendUrl()">Copy Link</button>
+      <button class="btn" onclick="closeSendFriend()">Maybe Later</button>
+    </div>
+    <div style="font-size:0.55rem;color:#444;margin-top:8px;">Powered by eBaum's World Viral Engine&trade;</div>
+  </div>
+</div>
+
+<!-- COOKIE BANNER -->
+<div id="cookie-banner" class="cookie-banner">
+  <p>This website uses cookies, tracking pixels, browser fingerprinting, emotional manipulation, and a guy named Dave who watches you through your webcam. By existing near this website you agree to our <a href="#" onclick="return false" style="color:#81a2be">287-page privacy policy</a> and surrender your firstborn to our analytics department.</p>
+  <button class="cookie-accept" onclick="acceptCookies()">I Accept My Fate</button>
+  <button class="cookie-reject" id="cookie-reject" onclick="rejectCookies(this)">Reject</button>
+</div>
+
+<!-- DONT CLICK BUTTON -->
+<button class="dont-click" id="dont-click-btn" onclick="dontClickHandler()">DON'T CLICK THIS</button>
+
+<!-- SIDEBAR -->
+<div class="chaos-sidebar">
+
+  <!-- LIVE DOPPLER CANDY RADAR -->
+  <div class="sidebar-section">
+    <div class="sidebar-header">LIVE DOPPLER CANDY RADAR</div>
+    <div class="weather-widget">
+      <div class="weather-temp" id="candy-temp">72&deg;</div>
+      <div class="weather-desc">Optimal Candy Storage Conditions</div>
+      <div class="weather-loc">Cubicle Farm, KS</div>
+      <div style="margin-top:4px;font-size:0.58rem;color:#555;">Chocolate Melt Risk: LOW</div>
+    </div>
+  </div>
+
+  <!-- SA AD -->
+  <div class="sa-ad">
+    <div class="sa-ad-title">Register Today!</div>
+    <div class="sa-ad-sub">Join the CandyVote forums for only :10bux: and get access to FYAD, GBS, and the candy tier list megathread</div>
+    <button class="sa-ad-cta" onclick="alert('Payment processor error: your :10bux: has been consumed by the void.\n\nThis is expected behavior.')">Pay :10bux:</button>
+  </div>
+
+  <!-- TAKE OUR POLL -->
+  <div class="sidebar-section">
+    <div class="sidebar-header">TAKE OUR POLL</div>
+    <div class="sidebar-poll">
+      <p style="font-size:0.72rem;color:#c5c8c6;margin-bottom:6px;">Should Candy Corn Be Illegal?</p>
+      <label><input type="radio" name="sidebar-poll" value="yes"> Yes, obviously</label>
+      <label><input type="radio" name="sidebar-poll" value="no"> No (wrong answer)</label>
+      <label><input type="radio" name="sidebar-poll" value="war"> This means war</label>
+      <button class="sidebar-poll-btn" onclick="alert('Thank you for your vote!\n\nResults will air tonight at 11.\n\n(They won\'t.)')">SUBMIT VOTE</button>
+      <div style="font-size:0.55rem;color:#444;margin-top:4px;">This is not a scientific poll.</div>
+    </div>
+  </div>
+
+  <!-- TOP 8 CANDIES -->
+  <div class="sidebar-section">
+    <div class="sidebar-header blue">MySpace Top 8</div>
+    <div id="top8-list" style="font-size:0.72rem;">
+      <div style="color:#555;padding:4px 0;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- NEWS TEASERS -->
+  <div class="teaser-card" onclick="alert('Full story not available.\nThis is local news, we don\'t actually investigate things.')">
+    <div class="teaser-label">JUST IN</div>
+    <div class="teaser-text">Is YOUR candy machine safe? What you don't know could hurt you. Details at 11.</div>
+  </div>
+  <div class="teaser-card" onclick="alert('WATCH: This video is not available in your area.\n\nJust kidding, there is no video.\nThis is a candy voting website.')">
+    <div class="teaser-label">WATCH</div>
+    <div class="teaser-text">Local man puts controversial candy in office machine, coworkers "devastated"</div>
+  </div>
+
+  <!-- VIEW COUNTER -->
+  <div class="sidebar-section">
+    <div class="view-counter">
+      <div class="view-counter-label">VISITORS</div>
+      <div class="view-counter-num" id="view-counter">000000</div>
+    </div>
+  </div>
+
+  <!-- SA AD 2 -->
+  <div class="sa-ad">
+    <div class="sa-ad-title">Hot Singles Near Your Candy Machine</div>
+    <div class="sa-ad-sub">They all prefer Reese's. Click to find out why doctors hate this one weird trick.</div>
+    <button class="sa-ad-cta" onclick="alert('USER WAS BANNED FOR THIS POST\n\nReason: Clicked the ad\nDuration: Permanent\n\nAppeal: lol no')">Learn More</button>
+  </div>
+
+  <!-- SEND TO FRIEND -->
+  <div class="sidebar-section" style="text-align:center;">
+    <button class="btn sm" onclick="showSendFriend()" style="width:100%;background:#de935f;color:#1d1f21;font-weight:700;">SEND TO A FRIEND!</button>
+  </div>
+
+  <!-- RATE THIS -->
+  <div class="sidebar-section">
+    <div class="sidebar-header green">RATE THIS SITE</div>
+    <div style="text-align:center;font-size:1.4rem;cursor:pointer;letter-spacing:4px;" id="star-rating">
+      <span onclick="rateSite(1)">&#9734;</span><span onclick="rateSite(2)">&#9734;</span><span onclick="rateSite(3)">&#9734;</span><span onclick="rateSite(4)">&#9734;</span><span onclick="rateSite(5)">&#9734;</span>
+    </div>
+    <div id="rate-result" style="text-align:center;font-size:0.62rem;color:#555;margin-top:2px;"></div>
+  </div>
+
+  <!-- SHOCKWAVE DISCLAIMER -->
+  <div style="text-align:center;font-size:0.52rem;color:#444;padding:8px;border:1px dashed #333;margin-top:8px;">
+    This site requires:<br>
+    Macromedia Shockwave<br>
+    RealPlayer 8.0<br>
+    Java Runtime Environment<br>
+    ActiveX Controls<br>
+    A prayer<br>
+    <div style="margin-top:4px;">
+      <span style="color:#707070;">Made on a Mac</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- MYSPACE PLAYER -->
+<div class="myspace-player">
+  <button class="play-btn" id="play-btn" onclick="toggleFakePlay()">&#9654;</button>
+  <div class="track-info">
+    <div class="track-name" id="track-name">Chocolate Rain</div>
+    <div class="track-artist" id="track-artist">Tay Zonday</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="vol">VOL: ||||</div>
+  <div style="font-size:0.55rem;color:#444;">MySpace Music&trade;</div>
+</div>
+
+<script>
+  // == CONFIG ================================================================
+  // Replace these with your Supabase project credentials
+  const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
+  // =========================================================================
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // -- VOTER IDENTITY -------------------------------------------------------
+  const nameInput = document.getElementById('voter-name-input');
+  nameInput.value = localStorage.getItem('candyVoterName') || '';
+  nameInput.addEventListener('change', () => {
+    localStorage.setItem('candyVoterName', nameInput.value.trim());
+    updateTripcode();
+    document.getElementById('admin-tab-btn').style.display = isJanitor() ? '' : 'none';
+  });
+  const voterName = () => nameInput.value.trim() || 'Anonymous';
+
+  const deviceId = (() => {
+    let id = localStorage.getItem('candyDeviceId');
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem('candyDeviceId', id); }
+    return id;
+  })();
+
+  // -- TRIPCODE (fake hash for imageboard flavor) ---------------------------
+  function hashTrip(str) {
+    if (!str) return '';
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    }
+    return '!' + Math.abs(h).toString(36).slice(0, 8).toUpperCase();
+  }
+
+  function updateTripcode() {
+    const name = nameInput.value.trim();
+    document.getElementById('tripcode').textContent = name ? hashTrip(name) : '';
+  }
+  updateTripcode();
+
+  // -- ADMIN / JANITOR CHECK ------------------------------------------------
+  const _jn = [
+    [0x62, 0x72, 0x61, 0x6e, 0x64, 0x6f, 0x6e],
+    [0x62, 0x77, 0x6f, 0x72, 0x66]
+  ];
+  const _jd = a => a.map(c => String.fromCharCode(c)).join('');
+  const isJanitor = () => _jn.some(a => _jd(a) === voterName().toLowerCase());
+  document.getElementById('admin-tab-btn').style.display = isJanitor() ? '' : 'none';
+
+  // -- POST NUMBER GENERATOR ------------------------------------------------
+  let _postNo = Math.floor(Math.random() * 90000000) + 10000000;
+  function nextPostNo() { return _postNo++; }
+
+  // -- HTML ESCAPE ----------------------------------------------------------
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  // -- TABS -----------------------------------------------------------------
+  function switchTab(btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+    if (tab === 'this-week') loadBallot();
+    if (tab === 'pool') loadPool();
+    if (tab === 'history') loadHistory();
+  }
+
+  // -- FLASH MESSAGES -------------------------------------------------------
+  let flashTimer;
+  function flash(msg, type) {
+    type = type || 'info';
+    clearTimeout(flashTimer);
+    document.getElementById('flash').innerHTML = '<div class="banner ' + type + '">' + msg + '</div>';
+    flashTimer = setTimeout(() => { document.getElementById('flash').innerHTML = ''; }, 5000);
+  }
+
+  // -- RANDOM FORUM SIGNATURES ----------------------------------------------
+  const signatures = [
+    "Posted from my Zune HD",
+    "i put on my robe and wizard hat",
+    "this post brought to you by TORTURE PHARMACEUTICALS",
+    "- sent from my Motorola RAZR",
+    "sig limit exceeded, buy premium",
+    "dont quote me on that",
+    "EDIT: wow this blew up. rip my inbox",
+    "\"I gotta have more cowbell\" - Christopher Walken",
+    "if you can read this, the annoying alarm in the parking lot is not my car",
+    "Posted from Netscape Navigator 4.08",
+    "All your base are belong to us",
+    "Has anyone really been far even as decided to use even go want to do look more like?",
+    "Epstein didn't kill himself",
+    "I AM ERROR",
+    "- posted from my Compaq Presario",
+    "THIS SPACE INTENTIONALLY LEFT BLANK (it wasn't)"
+  ];
+
+  function randomSig() {
+    return signatures[Math.floor(Math.random() * signatures.length)];
+  }
+
+  // -- RANDOM BANNED MESSAGES -----------------------------------------------
+  const bannedReasons = [
+    "Reason: Posting candy corn apologia",
+    "Reason: Excessive shitposting about Skittles",
+    "Reason: Attempting to bribe the janitor with Fun Dip",
+    "Reason: Unregistered lobbying for Big Chocolate",
+    "Reason: Claiming circus peanuts are edible",
+    "Reason: Voting twice (nice try)",
+    "Reason: Necco Wafer radicalization"
+  ];
+
+  function maybeBanned() {
+    if (Math.random() < 0.08) {
+      return '<div class="banned-notice">USER WAS BANNED FOR THIS POST<br><span style="font-size:0.58rem;">' +
+        bannedReasons[Math.floor(Math.random() * bannedReasons.length)] + '</span></div>';
+    }
+    return '';
+  }
+
+  // -- AI CANDY IMAGES ------------------------------------------------------
+  let _candyCache = {};
+
+  async function ensureImageSeeds(candies) {
+    const missing = candies.filter(c => !c.image_seed);
+    for (const c of missing) {
+      const seed = Math.floor(Math.random() * 9999999) + 1;
+      await db.from('candies').update({ image_seed: seed }).eq('id', c.id);
+      c.image_seed = seed;
+    }
+  }
+
+  function candyImageUrl(c) {
+    const prompt = encodeURIComponent(
+      'high quality product photo of ' + c.name + ' candy, vibrant colors, studio lighting, ' +
+      'candy packaging visible, photorealistic, appetizing, white background'
+    );
+    return 'https://image.pollinations.ai/prompt/' + prompt +
+      '?seed=' + c.image_seed + '&width=600&height=380&nologo=true&model=flux';
+  }
+
+  function loadCandyImages(candies) {
+    candies.forEach(c => {
+      const img = document.getElementById('cimg-' + c.id);
+      if (!img) return;
+      const url = c.image_url || candyImageUrl(c);
+      const giveUp = setTimeout(() => {
+        const wrap = img.closest('.vote-img-wrap');
+        if (wrap && !img.classList.contains('loaded')) wrap.style.display = 'none';
+      }, 20000);
+      img.onload = () => {
+        clearTimeout(giveUp);
+        img.classList.add('loaded');
+        if (!c.image_url) {
+          db.from('candies').update({ image_url: url }).eq('id', c.id);
+          c.image_url = url;
+        }
+      };
+      img.onerror = () => { const s = img.src; img.removeAttribute('src'); setTimeout(() => img.src = s, 4000); };
+      img.src = url;
+    });
+  }
+
+  function showWinnerModal(candyId) {
+    const c = _candyCache[candyId];
+    if (!c) return;
+    document.getElementById('winner-modal-name').textContent = c.name;
+    document.getElementById('winner-modal').classList.add('active');
+    const img = document.getElementById('winner-modal-img');
+    const url = c.image_url || candyImageUrl(c);
+    img.onload = () => img.classList.add('loaded');
+    img.onerror = () => { const s = img.src; img.removeAttribute('src'); setTimeout(() => img.src = s, 4000); };
+    img.src = url;
+  }
+
+  // -- THIS WEEK (ballot) ---------------------------------------------------
+  async function loadBallot() {
+    const el = document.getElementById('ballot-container');
+    el.innerHTML = '<div class="spinner">Loading...</div>';
+
+    const { data: ballots, error } = await db
+      .from('ballots')
+      .select('*, ballot_options(candy_id, candies(id, name, notes, image_seed, image_url))')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) { el.innerHTML = '<div class="banner error">DB error: ' + escHtml(error.message) + '</div>'; return; }
+
+    if (!ballots || ballots.length === 0) {
+      renderNoBallot(el);
+      return;
+    }
+
+    const ballot = ballots[0];
+    const candies = ballot.ballot_options.map(o => o.candies);
+    await ensureImageSeeds(candies);
+    candies.forEach(c => { _candyCache[c.id] = c; });
+    const { data: votes } = await db.from('votes').select('candy_id, voter_name, device_id').eq('ballot_id', ballot.id);
+    renderBallot(el, ballot, votes || []);
+    loadCandyImages(candies);
+    updateTop8();
+  }
+
+  function renderNoBallot(el) {
+    el.innerHTML =
+      '<div class="empty-state">' +
+      '<p style="color:#969896;">No ballot this week yet.</p>' +
+      (isJanitor()
+        ? '<button class="btn primary" onclick="generateBallot()">Generate This Week\'s Ballot</button>'
+        : '<p style="color:#555;font-size:0.78rem;">The janitor hasn\'t generated a ballot yet. Patience.</p>') +
+      '</div>';
+  }
+
+  function renderBallot(el, ballot, votes) {
+    const me = voterName();
+    const myVote = votes.find(v => v.device_id === deviceId);
+    const counts = {};
+    const votersByCandy = {};
+    ballot.ballot_options.forEach(o => { counts[o.candy_id] = 0; votersByCandy[o.candy_id] = []; });
+    votes.forEach(v => { counts[v.candy_id] = (counts[v.candy_id] || 0) + 1; votersByCandy[v.candy_id].push(v.voter_name); });
+    const maxCount = Math.max(...Object.values(counts), 1);
+
+    const isTiebreaker = !!ballot.title;
+    const ballotTitle = ballot.title || "This Week's Ballot";
+
+    let html = '<div class="section-header"><h2>' + escHtml(ballotTitle) + '</h2><div class="btn-row">';
+    if (!ballot.closed && isJanitor()) {
+      html += '<button class="btn sm" onclick="closeBallot(\'' + ballot.id + '\')">Close Ballot</button>';
+    }
+    if (isJanitor()) {
+      html += '<button class="btn primary sm" onclick="generateBallot()">New Ballot</button>';
+    }
+    html += '</div></div>';
+
+    if (isTiebreaker && !ballot.closed) {
+      html += '<div class="tiebreaker-banner">SUGAR RUSH SUDDEN DEATH OVERTIME</div>';
+    }
+
+    if (ballot.closed) {
+      const stickyBadge = '<span class="badge sticky">Sticky</span><span class="badge locked">Locked</span>';
+      html += '<div class="banner warn">This ballot is closed. Thread locked by janitor. ' + stickyBadge + (ballot.winner_id ? ' Winner below.' : '') + '</div>';
+    }
+
+    if (me === 'Anonymous' && !ballot.closed) {
+      html += '<div class="banner info">Enter a name up top to vote, newfriend.</div>';
+    }
+
+    html += ballot.ballot_options.map(opt => {
+      const c = opt.candies;
+      const count = counts[c.id] || 0;
+      const isMyVote = myVote && myVote.candy_id === c.id;
+      const isWinner = ballot.winner_id === c.id;
+      const pct = Math.round((count / maxCount) * 100);
+      const canVote = !ballot.closed && me !== 'Anonymous';
+      const postNo = nextPostNo();
+
+      let cls = 'card vote-card';
+      if (isMyVote) cls += ' my-vote';
+      if (isWinner) cls += ' is-winner';
+      if (ballot.closed) cls += ' closed-card';
+
+      const onClick = canVote ? ' onclick="castVote(\'' + ballot.id + '\', \'' + c.id + '\')"' : '';
+
+      const winnerBtn = !ballot.closed && myVote && !ballot.winner_id && isJanitor()
+        ? '<button class="btn primary sm" style="margin-top:6px" onclick="event.stopPropagation();markWinner(\'' + ballot.id + '\',\'' + c.id + '\')">Declare Winner</button>'
+        : '';
+
+      const voterDisplay = votersByCandy[c.id].map(n =>
+        '<span style="color:#b5bd68;">' + escHtml(n) + '</span> <span class="post-trip">' + hashTrip(n) + '</span>'
+      ).join(', ');
+
+      const flagHtml = '<button class="flag-btn" onclick="event.stopPropagation();flagCandy(\'' + escHtml(c.name) + '\')">[flag]</button>';
+
+      return '<div class="' + cls + '"' + onClick + '>' +
+        '<div class="vote-img-wrap">' +
+          '<img id="cimg-' + c.id + '" class="vote-img' + (c.image_url ? ' loaded' : '') + '" ' +
+            (c.image_url ? 'src="' + c.image_url + '"' : '') + ' alt="' + escHtml(c.name) + '">' +
+          '<div class="watermark">CANDYVOTE.COM</div>' +
+        '</div>' +
+        '<div class="vote-body">' +
+          '<div>' +
+            '<div class="post-header">' +
+              '<span class="post-name">' + escHtml(c.name) + '</span> ' +
+              (isWinner ? '<span class="badge winner">Winner</span><span class="badge goldmine">Comedy Goldmine</span>' : '') +
+              (isMyVote ? '<span class="post-you">(You)</span>' : '') +
+              ' <span class="post-no">No.<a>' + postNo + '</a></span> ' +
+              flagHtml +
+            '</div>' +
+            (c.notes ? '<div class="greentext">' + escHtml(c.notes) + '</div>' : '') +
+            '<div class="cl-location">Posted ' + randomTimeAgo() + ' in Cubicle Farm, KS</div>' +
+          '</div>' +
+          '<div class="bar-wrap">' +
+            '<div class="vote-count">' + count + ' vote' + (count !== 1 ? 's' : '') +
+              (voterDisplay ? ' <span style="color:#555;">(' + voterDisplay + ')</span>' : '') +
+            '</div>' +
+            '<div class="vote-bar"><div class="vote-bar-fill" style="width:' + pct + '%"></div></div>' +
+            (canVote && !myVote ? '<div class="hint">click to vote</div>' : '') +
+            winnerBtn +
+          '</div>' +
+        '</div>' +
+        '<div class="forum-sig">' + randomSig() + '</div>' +
+        maybeBanned() +
+      '</div>';
+    }).join('');
+
+    const allVoters = [...new Set(votes.map(v => v.voter_name))];
+    if (allVoters.length > 0) {
+      html += '<div class="voters">Voted: ' + allVoters.map(n =>
+        escHtml(n) + ' <span class="post-trip">' + hashTrip(n) + '</span>'
+      ).join(', ') + '</div>';
+    }
+
+    el.innerHTML = html;
+  }
+
+  function randomTimeAgo() {
+    const units = ['minutes', 'hours', 'days'];
+    const n = Math.floor(Math.random() * 23) + 1;
+    const u = units[Math.floor(Math.random() * units.length)];
+    return n + ' ' + u + ' ago';
+  }
+
+  // -- VOTING ---------------------------------------------------------------
+  async function castVote(ballotId, candyId) {
+    const me = voterName();
+    if (me === 'Anonymous') { flash('Enter your name first, lurker.', 'error'); return; }
+
+    const { error } = await db.from('votes').upsert(
+      { ballot_id: ballotId, candy_id: candyId, voter_name: me, device_id: deviceId },
+      { onConflict: 'ballot_id,device_id' }
+    );
+
+    if (error) { flash('Vote failed: ' + escHtml(error.message), 'error'); return; }
+    loadBallot();
+  }
+
+  async function markWinner(ballotId, candyId) {
+    const { error } = await db.from('ballots')
+      .update({ closed: true, winner_id: candyId })
+      .eq('id', ballotId);
+
+    if (error) { flash('Failed to crown winner', 'error'); return; }
+
+    await db.from('stockings').insert({
+      candy_id: candyId,
+      stocked_on: new Date().toISOString().split('T')[0]
+    });
+
+    flash('Winner declared! Into the machine it goes!', 'success');
+    showWinnerModal(candyId);
+    loadBallot();
+  }
+
+  async function closeBallot(ballotId) {
+    const { data: votes } = await db.from('votes').select('candy_id').eq('ballot_id', ballotId);
+
+    if (votes && votes.length > 0) {
+      const counts = {};
+      votes.forEach(v => { counts[v.candy_id] = (counts[v.candy_id] || 0) + 1; });
+      const maxVotes = Math.max(...Object.values(counts));
+      const tied = Object.keys(counts).filter(id => counts[id] === maxVotes);
+
+      if (tied.length > 1) {
+        await db.from('ballots').update({ closed: true }).eq('id', ballotId);
+
+        const { data: newBallot, error } = await db.from('ballots')
+          .insert({ week_of: thisFriday(), closed: false, title: 'SUGAR RUSH SUDDEN DEATH OVERTIME' })
+          .select().single();
+
+        if (error) { flash('Failed to create tiebreaker!', 'error'); return; }
+
+        await db.from('ballot_options').insert(
+          tied.map(id => ({ ballot_id: newBallot.id, candy_id: id }))
+        );
+
+        flash('TIE DETECTED! SUDDEN DEATH OVERTIME INITIATED!', 'error');
+        loadBallot();
+        return;
+      }
+    }
+
+    const { error } = await db.from('ballots').update({ closed: true }).eq('id', ballotId);
+    if (error) { flash('Failed to close ballot', 'error'); return; }
+    loadBallot();
+  }
+
+  async function generateBallot() {
+    const { data: candies } = await db.from('candies').select('*').eq('is_active', true);
+    if (!candies || candies.length === 0) {
+      flash('No candy in the stash yet. Add some first, you absolute walnut.', 'error');
+      return;
+    }
+
+    const { data: stockings } = await db.from('stockings').select('candy_id, stocked_on');
+    const lastStocked = {};
+    (stockings || []).forEach(s => {
+      if (!lastStocked[s.candy_id] || s.stocked_on > lastStocked[s.candy_id]) {
+        lastStocked[s.candy_id] = s.stocked_on;
+      }
+    });
+
+    const now = new Date();
+    const scored = candies.map(c => {
+      const ls = lastStocked[c.id];
+      const days = ls ? Math.floor((now - new Date(ls)) / 86400000) : 365;
+      return { c, score: Math.min(days + 1, 365) };
+    });
+
+    const count = Math.min(Math.max(Math.ceil(scored.length / 3), 4), scored.length);
+    const selected = weightedPick(scored, count);
+
+    const { data: ballot, error } = await db
+      .from('ballots')
+      .insert({ week_of: thisFriday(), closed: false })
+      .select().single();
+
+    if (error) { flash('Failed to create ballot: ' + escHtml(error.message), 'error'); return; }
+
+    await db.from('ballot_options').insert(
+      selected.map(c => ({ ballot_id: ballot.id, candy_id: c.id }))
+    );
+
+    flash('New ballot generated! Let the shitposting begin.', 'success');
+    loadBallot();
+  }
+
+  function weightedPick(scored, count) {
+    const pool = [...scored];
+    const picked = [];
+    for (let i = 0; i < count; i++) {
+      if (!pool.length) break;
+      const total = pool.reduce((s, x) => s + x.score, 0);
+      let rand = Math.random() * total;
+      for (let j = 0; j < pool.length; j++) {
+        rand -= pool[j].score;
+        if (rand <= 0) { picked.push(pool[j].c); pool.splice(j, 1); break; }
+      }
+    }
+    return picked;
+  }
+
+  function thisFriday() {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = day <= 5 ? 5 - day : 12 - day;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split('T')[0];
+  }
+
+  // -- CANDY POOL -----------------------------------------------------------
+  async function loadPool() {
+    const el = document.getElementById('pool-list');
+    el.innerHTML = '<div class="spinner">Loading...</div>';
+
+    const { data: candies } = await db.from('candies').select('*').eq('is_active', true).order('name');
+    const { data: stockings } = await db.from('stockings').select('candy_id, stocked_on');
+
+    const lastStocked = {};
+    (stockings || []).forEach(s => {
+      if (!lastStocked[s.candy_id] || s.stocked_on > lastStocked[s.candy_id]) {
+        lastStocked[s.candy_id] = s.stocked_on;
+      }
+    });
+
+    if (!candies || candies.length === 0) {
+      el.innerHTML = '<div class="card"><div class="empty-state"><p>No candy yet. Someone add something. Anyone. Please.</p></div></div>';
+      return;
+    }
+
+    el.innerHTML = '<div class="section-header"><h2>Candy Pool (' + candies.length + ')</h2></div>' +
+      candies.map(c => {
+        const postNo = nextPostNo();
+        return '<div class="card pool-card">' +
+          '<div>' +
+            '<div class="post-header">' +
+              '<span class="post-name">' + escHtml(c.name) + '</span>' +
+              ' <span class="post-no">No.<a>' + postNo + '</a></span>' +
+              ' <button class="flag-btn" onclick="flagCandy(\'' + escHtml(c.name).replace(/'/g, "\\'") + '\')">[flag]</button>' +
+            '</div>' +
+            (c.notes ? '<div class="greentext">' + escHtml(c.notes) + '</div>' : '') +
+            '<div class="r-meta">Submitted by ' + escHtml(c.submitted_by || 'Anonymous') +
+              ' <span class="post-trip">' + hashTrip(c.submitted_by || '') + '</span></div>' +
+            '<div class="r-meta">' + (lastStocked[c.id]
+              ? 'Last stocked: ' + fmtDate(lastStocked[c.id])
+              : 'Never stocked') + '</div>' +
+          '</div>' +
+          (isJanitor() ? '<div style="display:flex;flex-direction:column;gap:0.3rem;align-items:flex-end;">' +
+            (lastStocked[c.id]
+              ? '<button class="btn sm" onclick="clearStockings(\'' + c.id + '\')">Clear History</button>'
+              : '<button class="btn sm" onclick="markStocked(\'' + c.id + '\')">Mark Stocked</button>') +
+            '<button class="btn danger sm" onclick="removeCandy(\'' + c.id + '\')">Remove</button>' +
+          '</div>' : '') +
+        '</div>';
+      }).join('');
+  }
+
+  document.getElementById('add-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('new-name').value.trim();
+    const notes = document.getElementById('new-notes').value.trim();
+    if (!name) return;
+
+    const { error } = await db.from('candies').insert({
+      name: name,
+      notes: notes || null,
+      submitted_by: voterName()
+    });
+
+    if (error) { flash('Failed to add candy: ' + escHtml(error.message), 'error'); return; }
+    document.getElementById('new-name').value = '';
+    document.getElementById('new-notes').value = '';
+    flash(escHtml(name) + ' added to the stash.', 'success');
+    loadPool();
+  });
+
+  async function removeCandy(id) {
+    if (!confirm('Remove this candy from the pool?')) return;
+    await db.from('candies').update({ is_active: false }).eq('id', id);
+    flash('Candy yeeted from the pool.', 'success');
+    loadPool();
+  }
+
+  async function markStocked(id) {
+    await db.from('stockings').insert({
+      candy_id: id,
+      stocked_on: new Date().toISOString().split('T')[0]
+    });
+    flash('Marked as stocked.', 'success');
+    loadPool();
+  }
+
+  async function clearStockings(id) {
+    if (!confirm('Clear stocking history for this candy?')) return;
+    await db.from('stockings').delete().eq('candy_id', id);
+    flash('History cleared.', 'success');
+    loadPool();
+  }
+
+  // -- HISTORY --------------------------------------------------------------
+  async function loadHistory() {
+    const el = document.getElementById('history-list');
+    el.innerHTML = '<div class="spinner">Loading...</div>';
+
+    const { data: stockings } = await db
+      .from('stockings')
+      .select('*, candies(name)')
+      .order('stocked_on', { ascending: false })
+      .limit(50);
+
+    if (!stockings || stockings.length === 0) {
+      el.innerHTML = '<div class="card"><div class="empty-state"><p>No stocking history yet. The machine hungers.</p></div></div>';
+      return;
+    }
+
+    el.innerHTML = stockings.map(s => {
+      const postNo = nextPostNo();
+      return '<div class="card history-card">' +
+        '<div>' +
+          '<div class="post-header">' +
+            '<span class="post-name">' + escHtml(s.candies.name) + '</span>' +
+            ' <span class="post-no">No.<a>' + postNo + '</a></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="history-date">' + fmtDate(s.stocked_on) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // -- TOP 8 (sidebar) ------------------------------------------------------
+  async function updateTop8() {
+    const el = document.getElementById('top8-list');
+    const { data: stockings } = await db.from('stockings').select('candy_id, candies(name)');
+    if (!stockings || stockings.length === 0) {
+      el.innerHTML = '<div style="color:#555;padding:4px 0;">No data yet</div>';
+      return;
+    }
+    const counts = {};
+    const names = {};
+    stockings.forEach(s => {
+      counts[s.candy_id] = (counts[s.candy_id] || 0) + 1;
+      names[s.candy_id] = s.candies.name;
+    });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    el.innerHTML = sorted.map((entry, i) =>
+      '<div class="top8-item">' +
+        '<span class="top8-rank">' + (i + 1) + '.</span>' +
+        '<span class="top8-name">' + escHtml(names[entry[0]]) + '</span>' +
+        '<span style="color:#707070;">' + entry[1] + 'x</span>' +
+      '</div>'
+    ).join('');
+  }
+
+  // -- UTILITY --------------------------------------------------------------
+  function fmtDate(str) {
+    const d = new Date(str + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // -- FLAG (craigslist) ----------------------------------------------------
+  function flagCandy(name) {
+    const reasons = ['prohibited', 'spam', 'miscategorized', 'best of', 'overpriced (it\'s free)', 'causes diabetes'];
+    const reason = reasons[Math.floor(Math.random() * reasons.length)];
+    alert('Thank you for flagging "' + name + '" as [' + reason + '].\n\nYour flag has been forwarded to nobody.\n\nThis action has no effect whatsoever.');
+  }
+
+  // == CHAOS ELEMENTS =======================================================
+
+  // -- FLASH LOADER ---------------------------------------------------------
+  setTimeout(() => {
+    document.getElementById('flash-loader').style.display = 'none';
+    if (!localStorage.getItem('candyAppDismissed')) {
+      document.getElementById('app-popup').style.display = 'flex';
+    } else {
+      loadBallot();
+    }
+  }, 3000);
+
+  function dismissAppPopup() {
+    document.getElementById('app-popup').style.display = 'none';
+    localStorage.setItem('candyAppDismissed', '1');
+    loadBallot();
+  }
+
+  // -- COOKIE BANNER --------------------------------------------------------
+  function acceptCookies() {
+    document.getElementById('cookie-banner').style.display = 'none';
+    localStorage.setItem('candyCookies', '1');
+  }
+
+  let rejectCount = 0;
+  function rejectCookies(btn) {
+    rejectCount++;
+    if (rejectCount === 1) {
+      btn.textContent = 'Are you sure?';
+    } else if (rejectCount === 2) {
+      btn.textContent = 'Really?';
+    } else if (rejectCount === 3) {
+      btn.style.transform = 'scale(0.7)';
+      btn.textContent = 'Fine...';
+    } else if (rejectCount === 4) {
+      btn.style.transform = 'scale(0.4)';
+      btn.textContent = '...';
+    } else {
+      document.getElementById('cookie-banner').style.display = 'none';
+      setTimeout(() => {
+        document.getElementById('cookie-banner').style.display = 'flex';
+        rejectCount = 0;
+        btn.style.transform = '';
+        btn.textContent = 'Reject';
+      }, 10000);
+    }
+  }
+
+  if (localStorage.getItem('candyCookies')) {
+    document.getElementById('cookie-banner').style.display = 'none';
+  }
+
+  // -- SPARKLE CURSOR -------------------------------------------------------
+  const sparkles = ['*', '+', '.', '~'];
+  const sparkleColors = ['#cc6666', '#de935f', '#f0c674', '#b5bd68', '#8abeb7', '#81a2be', '#b294bb'];
+  let sparkleThrottle = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    if (Date.now() - sparkleThrottle < 60) return;
+    sparkleThrottle = Date.now();
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = sparkles[Math.floor(Math.random() * sparkles.length)];
+    s.style.left = e.clientX + 'px';
+    s.style.top = e.clientY + 'px';
+    s.style.color = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 800);
+  });
+
+  // -- VIEW COUNTER (fake) --------------------------------------------------
+  let viewCount = parseInt(localStorage.getItem('candyViews') || '0') + 1;
+  localStorage.setItem('candyViews', viewCount.toString());
+  const baseViews = 847293;
+  function updateViewCounter() {
+    const total = baseViews + viewCount + Math.floor(Math.random() * 3);
+    viewCount++;
+    document.getElementById('view-counter').textContent = total.toString().padStart(6, '0');
+  }
+  updateViewCounter();
+  setInterval(updateViewCounter, 8000);
+
+  // -- DONT CLICK -----------------------------------------------------------
+  const dontClickMessages = [
+    'I TOLD YOU NOT TO CLICK IT.\n\nNow your candy privileges are suspended for 0 seconds.',
+    'CONGRATULATIONS!\n\nYou have won: nothing.\n\nYour prize: also nothing.\n\nThank you for participating.',
+    '> clicking the dont click button\n> absolute madman',
+    'The frog is dead.\n\n(Joe Cartoon reference, ask your parents)',
+    'ERROR 418: I\'m a teapot.\n\nThe server refuses to brew candy because it is, permanently, a teapot.',
+    'You have been reported to the Candy Police.\n\nThey are on their way.\n\nThey are also made of candy.',
+    'SYSTEM ALERT:\n\nYour hard drive is being formatted.\n\nJust kidding. Unless...',
+    'Achievement Unlocked: Rebel Without A Cause\n\n+0 XP\n+0 Gold\n+1 Regret'
+  ];
+  let dontClickIdx = 0;
+
+  function dontClickHandler() {
+    alert(dontClickMessages[dontClickIdx % dontClickMessages.length]);
+    dontClickIdx++;
+    const btn = document.getElementById('dont-click-btn');
+    if (dontClickIdx > 3) {
+      btn.textContent = 'SERIOUSLY STOP';
+    }
+    if (dontClickIdx > 6) {
+      btn.textContent = 'WHY';
+    }
+  }
+
+  // -- SEND TO FRIEND -------------------------------------------------------
+  function showSendFriend() {
+    document.getElementById('send-friend-url').value = window.location.href;
+    document.getElementById('send-friend').style.display = 'flex';
+  }
+
+  function closeSendFriend() {
+    document.getElementById('send-friend').style.display = 'none';
+  }
+
+  function copyFriendUrl() {
+    const input = document.getElementById('send-friend-url');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+      flash('Link copied! Now spam it everywhere.', 'success');
+      closeSendFriend();
+    });
+  }
+
+  // -- STAR RATING ----------------------------------------------------------
+  function rateSite(n) {
+    const el = document.getElementById('star-rating');
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+      stars += '<span onclick="rateSite(' + i + ')">' + (i <= n ? '&#9733;' : '&#9734;') + '</span>';
+    }
+    el.innerHTML = stars;
+    const messages = [
+      'You rated 1 star. USER WAS PROBATED FOR THIS POST.',
+      'You rated 2 stars. The janitor is disappointed.',
+      'You rated 3 stars. Mediocrity acknowledged.',
+      'You rated 4 stars. Almost adequate.',
+      'You rated 5 stars. Your :10bux: has been refunded.'
+    ];
+    document.getElementById('rate-result').textContent = messages[n - 1];
+  }
+
+  // -- FAKE MUSIC PLAYER ----------------------------------------------------
+  const tracks = [
+    { name: 'Chocolate Rain', artist: 'Tay Zonday' },
+    { name: 'Numa Numa', artist: 'O-Zone' },
+    { name: 'All Star', artist: 'Smash Mouth' },
+    { name: 'Never Gonna Give You Up', artist: 'Rick Astley' },
+    { name: 'Sandstorm', artist: 'Darude' },
+    { name: 'Bodies', artist: 'Drowning Pool' },
+    { name: 'In The End', artist: 'Linkin Park' },
+    { name: 'Crank That', artist: 'Soulja Boy' },
+    { name: 'Blue (Da Ba Dee)', artist: 'Eiffel 65' }
+  ];
+  let currentTrack = Math.floor(Math.random() * tracks.length);
+  let fakePlaying = true;
+
+  function updateTrackDisplay() {
+    const t = tracks[currentTrack];
+    document.getElementById('track-name').textContent = t.name;
+    document.getElementById('track-artist').textContent = t.artist;
+  }
+  updateTrackDisplay();
+
+  function toggleFakePlay() {
+    fakePlaying = !fakePlaying;
+    document.getElementById('play-btn').innerHTML = fakePlaying ? '&#9646;&#9646;' : '&#9654;';
+    document.getElementById('progress-fill').style.animationPlayState = fakePlaying ? 'running' : 'paused';
+  }
+
+  setInterval(() => {
+    if (fakePlaying) {
+      currentTrack = (currentTrack + 1) % tracks.length;
+      updateTrackDisplay();
+      const fill = document.getElementById('progress-fill');
+      fill.style.animation = 'none';
+      fill.offsetHeight;
+      fill.style.animation = 'fakeProgress 47s linear infinite';
+    }
+  }, 47000);
+
+  // -- CANDY TEMP (updates randomly) ----------------------------------------
+  setInterval(() => {
+    const temp = 68 + Math.floor(Math.random() * 10);
+    document.getElementById('candy-temp').innerHTML = temp + '&deg;';
+  }, 30000);
+
+  // -- INIT -----------------------------------------------------------------
+  if (localStorage.getItem('candyAppDismissed')) {
+    loadBallot();
+  }
+  updateTop8();
+
+</script>
+</body>
+</html>
