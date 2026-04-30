@@ -742,3 +742,69 @@
   border-radius: 4px;
   transition: width 0.3s;
 }
+
+/* -- CHUMBOX (taboola cesspool) ----------------------------------------- */
+.chumbox {
+  max-width: 780px;
+  margin: 0 auto 0;
+  padding: 0 1rem;
+}
+.chumbox-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0 6px;
+  border-top: 1px solid #ddd;
+  font-size: 0.72rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.chumbox-by {
+  font-size: 0.58rem;
+  color: #bbb;
+  text-transform: none;
+}
+.chumbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-bottom: 16px;
+}
+.chum-card {
+  cursor: pointer;
+  border: 1px solid #e8e8e8;
+  background: #fff;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.chum-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.chum-img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+  background: #eee;
+}
+.chum-body {
+  padding: 8px 10px;
+}
+.chum-title {
+  font-size: 0.75rem;
+  color: #333;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+.chum-source {
+  font-size: 0.55rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 600px) {
+  .chumbox-grid { grid-template-columns: repeat(2, 1fr); }
+}

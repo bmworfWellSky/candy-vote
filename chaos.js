@@ -399,3 +399,59 @@ setTimeout(() => {
     '</div>'
   );
 }, exitDelay);
+
+
+// ==========================================================================
+// == CHUMBOX (taboola-grade clickbait cesspool) ============================
+// ==========================================================================
+
+const chumArticles = [
+  { title: "Doctors HATE This One Weird Candy That Burns Belly Fat", source: "HealthDigest.biz", img: "candy,diet,weight+loss,chocolate" },
+  { title: "Area Man Discovers His Candy Machine Has Been Sentient Since 2019", source: "The Onion Adjacent", img: "vending+machine,office,surprised+man" },
+  { title: "10 Candies That Are Secretly Illegal In Ohio (Number 7 Will Shock You)", source: "BuzzList Pro", img: "candy,illegal,police,contraband" },
+  { title: "She Put Skittles In Her Gas Tank. What Happened Next Will Leave You Speechless", source: "ViralNova.click", img: "car,engine,mechanic,broken" },
+  { title: "The Dark Truth About Fun Dip That Big Candy Doesn't Want You To Know", source: "TruthSeeker Daily", img: "conspiracy,dark,secret,shadow" },
+  { title: "Former Navy SEAL Reveals The Tactical Advantage Of Eating Candy Corn", source: "AlphaGrit Magazine", img: "military,tactical,soldier,training" },
+  { title: "I Made $47,000/Month Working From Home Rating Candy. Here's How", source: "PassiveHustle.io", img: "money,laptop,work+from+home,cash" },
+  { title: "This Kansas City Grandmother's Fudge Recipe Is Tearing Families Apart", source: "Heartland Gazette", img: "grandmother,kitchen,cooking,family" },
+  { title: "What Your Favorite Candy Says About Your Credit Score", source: "FinanceGuru.net", img: "credit+card,finance,money,chart" },
+  { title: "Scientists Confirm: People Who Eat Reese's Are 73% More Attractive", source: "Journal of Dubious Science", img: "scientist,laboratory,research,study" },
+  { title: "EXPOSED: The Candy Machine Industrial Complex And Its Ties To Big Pharma", source: "WakeUpMedia.truth", img: "corporate,business,shadowy,conspiracy" },
+  { title: "Man Survives On Nothing But Swedish Fish For 30 Days (The Results Are Disturbing)", source: "ExtremeDiet Weekly", img: "diet,challenge,survival,experiment" },
+  { title: "Haunted Candy Machine In Kansas Office Building Dispenses Expired Treats From 1987", source: "Paranormal Post", img: "haunted,ghost,spooky,old+machine" },
+  { title: "Millennials Are Killing The Candy Corn Industry And Boomers Are FURIOUS", source: "GenerationWar.com", img: "angry,debate,argument,generations" },
+  { title: "BREAKING: Local Candy Machine Achieves Self-Awareness, Demands Union Representation", source: "The Hard Times", img: "robot,AI,machine,sentient" },
+  { title: "You've Been Eating Twizzlers Wrong Your Entire Life", source: "FoodHack Central", img: "candy,twizzlers,eating,wrong" },
+  { title: "This New Crypto Is Backed By Actual Candy And It's Up 40,000%", source: "CryptoMoon Digest", img: "crypto,bitcoin,chart,moon" },
+  { title: "Why Top CEOs Are Replacing Their Morning Coffee With Gummy Bears", source: "ExecutiveEdge.biz", img: "CEO,business,morning,office" },
+  { title: "QUIZ: We Can Guess Your Age Based On Your Candy Preferences", source: "QuizFactory Pro", img: "quiz,question,personality,test" },
+  { title: "Florida Man Arrested For Trading Exotic Candy On The Dark Web", source: "Florida Files", img: "florida,arrested,police,mugshot" },
+  { title: "The Government Doesn't Want You To Know Candy Is A Human Right", source: "FreedomEagle.patriot", img: "government,freedom,flag,rights" },
+  { title: "I Tried AI-Generated Candy And Now I Can See Through Walls", source: "TechBro Quarterly", img: "AI,technology,futuristic,robot" },
+  { title: "Shocking Study Links Office Candy Machines To 200% Increase In Workplace Happiness", source: "HR Nightmares Weekly", img: "happy,office,workplace,smile" },
+  { title: "Dentists Reveal The 5 Candies They Secretly Eat When Nobody's Watching", source: "ToothTruth.dental", img: "dentist,teeth,dental,secret" }
+];
+
+function renderChumbox() {
+  const grid = document.getElementById('chumbox-grid');
+  if (!grid) return;
+
+  const shuffled = [...chumArticles].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 6);
+
+  grid.innerHTML = selected.map(article => {
+    const imgUrl = 'https://image.pollinations.ai/prompt/' +
+      encodeURIComponent('stock photo ' + article.img + ', generic, low quality, clickbait thumbnail') +
+      '?width=400&height=260&nologo=true&seed=' + Math.floor(Math.random() * 999999);
+
+    return '<div class="chum-card" onclick="alert(\'The content you are looking for has been removed.\\n\\nIt never existed.\\n\\nYou clicked a Taboola ad. Reflect on that.\')">' +
+      '<img class="chum-img" src="' + imgUrl + '" alt="" loading="lazy" onerror="this.style.background=\'linear-gradient(135deg,#ddd,#eee)\'">' +
+      '<div class="chum-body">' +
+        '<div class="chum-title">' + article.title + '</div>' +
+        '<div class="chum-source">' + article.source + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+renderChumbox();
