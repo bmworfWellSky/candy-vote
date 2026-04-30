@@ -1,0 +1,473 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, html {
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  background: #f0f0ec;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* -- HEADER (local news station style) ---------------------------------- */
+header {
+  background: linear-gradient(135deg, #1a3a5c, #0d47a1, #1a3a5c);
+  border-bottom: 4px solid #cc0000;
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1 {
+  font-size: 1.6rem;
+  color: #fff;
+  font-family: 'Arial Black', 'Impact', sans-serif;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+header h1 span.board {
+  color: #ff6;
+  font-style: normal;
+}
+
+.voter-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #cde;
+}
+
+.voter-name input {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #fff4;
+  border-radius: 2px;
+  font-size: 0.82rem;
+  width: 150px;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-family: inherit;
+}
+
+.voter-name input::placeholder { color: #fff8; }
+.voter-name input:focus { outline: none; border-color: #ff6; background: rgba(255,255,255,0.25); }
+
+.tripcode {
+  color: #8f8;
+  font-size: 0.75rem;
+  font-family: monospace;
+}
+
+/* -- NAV (tab bar) ------------------------------------------------------ */
+nav {
+  background: #fff;
+  display: flex;
+  border-bottom: 3px solid #cc0000;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+nav button {
+  background: none;
+  border: none;
+  color: #555;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s;
+  font-family: 'Arial', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: -3px;
+}
+
+nav button:hover { color: #cc0000; background: #fff5f5; }
+nav button.active { color: #cc0000; border-bottom-color: #cc0000; }
+
+/* -- MAIN CONTENT ------------------------------------------------------- */
+main {
+  max-width: 780px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.section-header h2 {
+  font-size: 1.1rem;
+  color: #1a3a5c;
+  font-weight: 700;
+}
+
+/* -- BUTTONS ------------------------------------------------------------ */
+.btn {
+  background: #e8e8e8;
+  color: #333;
+  border: 1px solid #ccc;
+  padding: 0.4rem 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn:hover { background: #ddd; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.primary { background: #cc0000; border-color: #aa0000; color: #fff; }
+.btn.primary:hover { background: #ee0000; }
+.btn.danger { background: #8b0000; border-color: #660000; color: #fff; }
+.btn.danger:hover { background: #aa0000; }
+.btn.sm { padding: 0.25rem 0.6rem; font-size: 0.78rem; }
+
+.btn-row { display: flex; gap: 0.5rem; }
+
+/* -- CARDS (post style) ------------------------------------------------- */
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-left: 4px solid #cc0000;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.6rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.post-header {
+  font-size: 0.78rem;
+  color: #888;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.post-name { color: #117864; font-weight: 700; }
+.post-trip { color: #8e44ad; font-family: monospace; }
+.post-no { color: #999; }
+.post-no a { color: #2471a3; text-decoration: none; cursor: pointer; }
+.post-you { color: #cc0000; font-size: 0.72rem; font-weight: 700; }
+.post-date { color: #aaa; font-size: 0.72rem; }
+
+.greentext { color: #789922; }
+.greentext::before { content: '>'; }
+
+/* -- VOTE CARDS --------------------------------------------------------- */
+.vote-card {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  padding: 0;
+  overflow: hidden;
+}
+
+.vote-card:hover:not(.closed-card) { border-color: #0d47a1; border-left-color: #0d47a1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+.vote-card.my-vote { border-color: #2e7d32; border-left-color: #2e7d32; background: #f1f8e9; }
+.vote-card.is-winner { border-color: #f9a825; border-left-color: #f9a825; background: #fffde7; }
+.vote-card.closed-card { cursor: default; }
+
+.vote-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  overflow: hidden;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.vote-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.vote-img.loaded { opacity: 1; }
+
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.08);
+  letter-spacing: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: 'Impact', sans-serif;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.vote-body {
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bar-wrap { min-width: 140px; text-align: right; }
+
+.vote-bar {
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.vote-bar-fill {
+  height: 100%;
+  background: #cc0000;
+  border-radius: 2px;
+  transition: width 0.4s;
+}
+
+.vote-count { font-size: 0.78rem; color: #666; }
+
+/* -- WINNER MODAL ------------------------------------------------------- */
+.winner-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.winner-modal.active { display: flex; }
+.winner-modal-inner {
+  background: #fff;
+  border: 4px solid #f9a825;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+.winner-modal-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  overflow: hidden;
+}
+.winner-modal-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.winner-modal-img.loaded { opacity: 1; }
+.winner-modal-body { padding: 1.5rem; }
+.winner-modal-name { font-size: 1.6rem; font-weight: 700; color: #cc0000; margin-bottom: 0.4rem; }
+.winner-modal-sub { color: #666; margin-bottom: 1rem; font-size: 0.9rem; }
+
+/* -- TIEBREAKER --------------------------------------------------------- */
+@keyframes tiepulse {
+  from { box-shadow: 0 0 8px rgba(204, 0, 0, 0.6); }
+  to { box-shadow: 0 0 24px rgba(204, 0, 0, 1); }
+}
+
+.tiebreaker-banner {
+  background: linear-gradient(135deg, #cc0000, #ff6600, #cc0000);
+  color: white;
+  font-weight: 900;
+  text-align: center;
+  font-size: 0.95rem;
+  padding: 0.8rem 1rem;
+  border-radius: 2px;
+  margin-bottom: 0.75rem;
+  animation: tiepulse 0.6s infinite alternate;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: 'Arial Black', 'Impact', sans-serif;
+}
+
+/* -- BADGES ------------------------------------------------------------- */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 0.4rem;
+}
+
+.badge.winner { background: #f9a825; color: #333; }
+.badge.sticky { background: #e65100; color: #fff; }
+.badge.locked { background: #b71c1c; color: #fff; }
+.badge.goldmine { background: #fdd835; color: #333; }
+.badge.banned { background: #cc0000; color: #fff; font-style: italic; }
+
+/* -- BANNERS ------------------------------------------------------------ */
+.banner {
+  padding: 0.6rem 0.9rem;
+  border-radius: 2px;
+  margin-bottom: 0.75rem;
+  font-size: 0.82rem;
+  border: 1px solid;
+}
+
+.banner.warn { background: #fff8e1; border-color: #f9a825; color: #795548; }
+.banner.info { background: #e3f2fd; border-color: #64b5f6; color: #1565c0; }
+.banner.success { background: #e8f5e9; border-color: #66bb6a; color: #2e7d32; }
+.banner.error { background: #ffebee; border-color: #ef5350; color: #c62828; }
+
+/* -- FORMS -------------------------------------------------------------- */
+form.add-form {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+form.add-form h3 {
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+  color: #cc0000;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.fg { margin-bottom: 0.6rem; }
+.fg label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.2rem; color: #555; }
+.fg input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fff;
+  color: #333;
+}
+.fg input:focus { outline: none; border-color: #0d47a1; }
+
+/* -- POOL & HISTORY CARDS ----------------------------------------------- */
+.pool-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.history-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.r-name { font-weight: 600; font-size: 0.95rem; color: #333; }
+.r-notes { font-size: 0.78rem; color: #666; margin-top: 2px; }
+.r-meta { font-size: 0.72rem; color: #999; margin-top: 2px; }
+.history-date { font-size: 0.78rem; color: #999; }
+
+.hint { font-size: 0.68rem; color: #999; margin-top: 3px; }
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem;
+  color: #888;
+}
+.empty-state p { margin-bottom: 0.75rem; }
+
+.spinner { text-align: center; padding: 2rem; color: #888; font-size: 0.85rem; }
+
+.voters { font-size: 0.74rem; color: #888; margin-top: 0.5rem; }
+
+/* -- FLAG DROPDOWN ------------------------------------------------------ */
+.flag-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.68rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+}
+.flag-btn:hover { color: #cc0000; }
+
+/* -- CRAIGSLIST WARNING ------------------------------------------------- */
+.cl-warning {
+  background: #fef9e7;
+  border: 1px solid #f0d27a;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.72rem;
+  color: #7d6608;
+}
+.cl-warning a { color: #2471a3; }
+.cl-location {
+  font-size: 0.68rem;
+  color: #999;
+  font-style: italic;
+}
+
+/* -- FORUM SIGNATURES --------------------------------------------------- */
+.forum-sig {
+  border-top: 1px dashed #ddd;
+  margin-top: 6px;
+  padding-top: 4px;
+  font-size: 0.62rem;
+  color: #aaa;
+  font-style: italic;
+}
+
+/* -- BANNED/PROBATION --------------------------------------------------- */
+.banned-notice {
+  text-align: center;
+  font-size: 0.68rem;
+  color: #cc0000;
+  background: #fff0f0;
+  border: 1px solid #ffcccc;
+  padding: 4px 8px;
+  margin-top: 4px;
+}
+
+/* -- ADJUST MAIN FOR SIDEBAR -------------------------------------------- */
+body { padding-bottom: 44px; }
+
+@media (min-width: 1100px) {
+  body { margin-right: 260px; }
+}
+@media (max-width: 1099px) {
+  .chaos-sidebar { display: none !important; }
+  .dont-click { display: none !important; }
+  .cookie-banner { right: 0; }
+}
